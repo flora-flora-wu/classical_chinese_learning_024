@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鄭人買履文言文互動學習網頁</title>
+    <!-- 引入 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Font Awesome 用於圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* 自定義滾動條樣式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f4f8; /* 淺藍灰色背景 */
+        }
+
+        /* 句子點擊效果 */
+        .sentence-span {
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            display: inline-block; /* Make span behave like block for padding/margin but stay inline */
+            margin-bottom: 4px; /* Space out lines */
+        }
+        .sentence-span:hover {
+            background-color: #e2e8f0; /* 淺灰色懸停背景 */
+            transform: translateY(-1px);
+        }
+        .sentence-span.active {
+            background-color: #bfdbfe; /* 淺藍色活躍背景 */
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* 遊戲卡片效果 */
+        .game-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .game-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 遊戲按鈕樣式 */
+        .game-button {
+            background-color: #6366f1; /* 藍色 */
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 添加陰影 */
+            display: inline-flex; /* 使內容垂直居中 */
+            align-items: center; /* 使內容垂直居中 */
+            justify-content: center; /* 使內容水平居中 */
+            text-align: center; /* 確保文字居中 */
+        }
+        .game-button:hover {
+            background-color: #4f46e5; /* 稍深的藍色 */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* 懸停時陰影更大 */
+        }
+        .game-button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .game-button.selected {
+            background-color: #fde047; /* 亮黃色 */
+            color: #4f46e5;
+            border: 2px solid #fbbf24;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .game-button.correct {
+            background-color: #86efac; /* 淺綠色 */
+            color: #166534;
+            border: 2px solid #4ade80;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .game-button.incorrect {
+            background-color: #fca5a5; /* 淺紅色 */
+            color: #991b1b;
+            border: 2px solid #ef4444;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .game-button:disabled {
+            background-color: #cbd5e1; /* 禁用時的灰色 */
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* 遊戲類型選擇按鈕的特定樣式 */
+        .game-type-button {
+            background-color: #818cf8; /* 較淺的藍色 */
+            color: white;
+            padding: 1.5rem 1rem; /* 更大的觸摸目標 */
+            border-radius: 16px; /* 更圓的圓角 */
+            font-size: 1.25rem; /* 更大的字體 */
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15); /* 更大的陰影 */
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative; /* For pseudo-elements or subtle effects */
+            overflow: hidden;
+        }
+
+        .game-type-button:hover {
+            background-color: #6366f1; /* 懸停時顏色加深 */
+            transform: translateY(-5px); /* 懸停時提升更多 */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); /* 懸停時陰影更深更大 */
+        }
+        .game-type-button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 彈出視窗樣式 */
+        .modal {
+            display: none; /* 預設隱藏 */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); /* 半透明背景 */
+            backdrop-filter: blur(5px); /* 模糊背景 */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .modal-header {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4f46e5;
+            margin-bottom: 1rem;
+        }
+        .modal-body {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .modal-footer button {
+            background-color: #4f46e5;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .modal-footer button:hover {
+            background-color: #4338ca;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive adjustments for panels and modal, keeping grid flexible */
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr; /* On small screens, stack columns */
+            }
+            .panel {
+                margin-bottom: 1.5rem; /* Add spacing between stacked panels */
+            }
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 標題 -->
+    <h1 class="text-4xl font-extrabold text-center text-indigo-700 mb-8 rounded-lg py-4 shadow-md bg-white">
+        鄭人買履文言文互動學習網頁
+    </h1>
+
+    <!-- 主要內容網格佈局 -->
+    <div class="main-grid grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+
+        <!-- 第一部分：原文顯示區 -->
+        <div class="panel bg-white p-6 rounded-xl shadow-lg md:col-span-1 overflow-y-auto max-h-[80vh]">
+            <h2 class="text-2xl font-bold text-indigo-600 mb-4 flex items-center">
+                <i class="fas fa-book-open mr-2"></i> 原文顯示區
+            </h2>
+            <div id="original-text" class="text-lg text-gray-800 leading-relaxed">
+                <!-- 原文內容將由 JavaScript 動態加載 -->
+            </div>
+        </div>
+
+        <!-- 第二部分：句子分析區 -->
+        <div class="panel bg-white p-6 rounded-xl shadow-lg md:col-span-1 overflow-y-auto max-h-[80vh]">
+            <h2 class="text-2xl font-bold text-indigo-600 mb-4 flex items-center">
+                <i class="fas fa-search-plus mr-2"></i> 句子分析區
+            </h2>
+            <div id="analysis-area" class="text-gray-700">
+                <p class="text-center text-gray-500 italic mt-8">
+                    點擊左側原文中的句子，即可在此處查看詳細分析。
+                </p>
+            </div>
+        </div>
+
+        <!-- 第三部分：互動遊戲區 -->
+        <div class="panel bg-white p-6 rounded-xl shadow-lg md:col-span-2 overflow-y-auto">
+            <h2 class="text-2xl font-bold text-indigo-600 mb-4 flex items-center">
+                <i class="fas fa-gamepad mr-2"></i> 互動遊戲區
+            </h2>
+            <div id="game-area" class="space-y-6 w-full">
+                <!-- 遊戲內容將由 JavaScript 動態加載 -->
+                <!-- 初始會顯示遊戲類型選擇按鈕 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 模態框用於顯示遊戲結果或提示 -->
+    <div id="message-modal" class="modal flex">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-header"></div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer">
+                <button id="modal-close-btn">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模態框操作函數
+        const messageModal = document.getElementById('message-modal');
+        const modalHeader = document.getElementById('modal-header');
+        const modalBody = document.getElementById('modal-body');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // 強制隱藏模態框：在腳本加載時就確保它是隱藏的
+        messageModal.style.display = 'none';
+
+        /**
+         * 顯示提示訊息模態框
+         * @param {string} header 模態框標題
+         * @param {string} body 模態框內容
+         * @param {function} onCloseCallback 關閉模態框後執行的回調函數 (可選)
+         */
+        function showMessage(header, body, onCloseCallback = null) {
+            modalHeader.textContent = header;
+            modalBody.textContent = body;
+            messageModal.style.display = 'flex'; // 顯示模態框
+
+            const closeHandler = () => {
+                messageModal.style.display = 'none'; // 隱藏模態框
+                modalCloseBtn.removeEventListener('click', closeHandler); // 移除事件監聽器
+                if (onCloseCallback) {
+                    onCloseCallback(); // 執行回調
+                }
+            };
+            // 每次顯示模態框時，重新添加事件監聽器，以確保只執行一次
+            modalCloseBtn.removeEventListener('click', closeHandler); // 避免重複添加
+            modalCloseBtn.addEventListener('click', closeHandler);
+        }
+
+        // 鄭人買履原文及分析數據
+        const textData = [
+            {
+                type: "generalInfo",
+                title: "《鄭人買履》總體賞析與作者簡介",
+                author: "韓非",
+                authorIntro: `韓非（公元前280年？—公元前233年），戰國末期思想家，法家主要代表人物，出身韓國貴族，與李斯同是荀子的學生。秦始皇讀到他的著作，十分欣賞。後來秦國攻打韓國，韓王派韓非出使秦國，秦王將他扣留下來。李斯當時已在秦國當官，怕韓非受到重用，影響自己的地位，用讒言陷害韓非，韓非最後死在獄中。韓非的思想集法家的大成，他提出的君主專制及法家思想等，對後世影響很大。《韓非子》基本上是韓非所著，也有後學所輯錄的文字，全書共有五十五篇，十餘萬字。《韓非子》的文章詞鋒銳利，議論精闢，文章條理分明、嚴密透徹，有很強的說服力；又善用寓言，巧設譬喻，使得文章更為生動。本文選自《韓非子·外儲說左(上)》。`,
+                poemBackground: `這是一個寓言，以故事諷刺那些因循守舊，不思變通的人。寓言故事篇幅一般不長，情節簡單，但卻能體現深刻的道理，可讀性很高。中國先秦時期的思想家喜歡運用寓言寄寓道理，著名的寓言故事還有《井底之蛙》、《自相矛盾》等。韓非生於戰國時代，當時各國競爭激烈，紛紛變法圖強。韓非是韓國貴族，極力主張改革，認為若不改革，國家最終將會滅亡；但卻有些人主張要維持舊制，不肯改變。`,
+                overallAnalysis: `本故事記述從前有一個鄭國人，準備購買一雙新鞋子，於是先量度自己雙腳的尺寸，然後前往市集。後來，他在挑選到鞋子後才發覺忘記帶剛量度的尺寸，於是即刻回家去取；但待他再回到市集時，商販已收市了，最終買不到鞋子。有人問他：「你為甚麼不用自己的腳去試鞋子呢？」他回答說：「我寧願相信量度的尺寸，也不相信自己的腳。」本文篇幅雖短，但語言生動，文字精煉。作者以這則寓言諷刺做事拘泥固執，不知靈活變通的人。作者沒有直接評價鄭人的行為，但透過篇中對他的行徑及說話的描述，已活現出他迂腐可笑的形象。文中詳寫鄭人量度雙腳和回家取尺寸的經過，而略寫中間選鞋的過程，突出了文章的重點，剪裁得宜。本文言簡意深，極具諷刺意味。故事中鄭人寧可相信尺寸的迂執行為，與那些堅持守舊的人就極為相似；鄭人最終一無所獲的結果，也暗示了韓非認為人若抱殘守缺，不懂變通，終會一事無成的看法。文中「置」、「度」等字前後重複出現，但詞性與意思並不相同，這是文言文一詞多義的特點。此外，文中「坐」通「座」、「反」通「返」，是文言文中常見的古今字；但現今不可相混，我們書寫時要倍加留意。`
+            },
+            {
+                sentence: "鄭人有且置履者，",
+                translation: "有一個鄭國人，將要買鞋。",
+                words: [
+                    { word: "鄭人", explanation: "鄭國的人。鄭：西周所封諸侯國之一，春秋戰國時期曾一度強盛。", type: "實詞" },
+                    { word: "有", explanation: "有。", type: "虛詞" },
+                    { word: "且", explanation: "將要。", type: "虛詞" },
+                    { word: "置", explanation: "購買。", type: "動詞" },
+                    { word: "履", explanation: "鞋子。", type: "實詞" },
+                    { word: "者", explanation: "…的人。", type: "虛詞" }
+                ],
+                analysis: "交代故事的主人公和事件的起因。",
+                rhetoric: "無"
+            },
+            {
+                sentence: "先自度其足而置之其坐。",
+                translation: "他先量了自己的腳，然後把量好的尺寸放在自己的座位上。",
+                words: [
+                    { word: "先", explanation: "首先，預先。", type: "虛詞" },
+                    { word: "自", explanation: "自己。", type: "虛詞" },
+                    { word: "度", explanation: "量度。", type: "動詞" },
+                    { word: "其", explanation: "他的。", type: "代詞" },
+                    { word: "足", explanation: "腳。", type: "實詞" },
+                    { word: "而", explanation: "然後，表示順承關係。", type: "虛詞" },
+                    { word: "置", explanation: "擱置，放在。", type: "動詞" },
+                    { word: "之", explanation: "它，指量度的尺寸。", type: "代詞" },
+                    { word: "坐", explanation: "通「座」，座位。", type: "實詞" }
+                ],
+                analysis: "描寫鄭人買鞋前的準備工作，強調其過於依賴「尺寸」的行為。",
+                rhetoric: "細節描寫"
+            },
+            {
+                sentence: "至之市，而忘操之。",
+                translation: "到了市集，卻忘記拿著那個尺寸。",
+                words: [
+                    { word: "至", explanation: "到，到達。", type: "動詞" },
+                    { word: "之", explanation: "往，到…去。", type: "動詞" },
+                    { word: "市", explanation: "市集。", type: "實詞" },
+                    { word: "而", explanation: "卻，表示轉折關係。", type: "虛詞" },
+                    { word: "忘", explanation: "忘記。", type: "動詞" },
+                    { word: "操", explanation: "拿著，執持。", type: "動詞" },
+                    { word: "之", explanation: "它，指量度的尺寸。", type: "代詞" }
+                ],
+                analysis: "情節轉折，鄭人忘帶尺寸，為後續的困境埋下伏筆。",
+                rhetoric: "情節轉折"
+            },
+            {
+                sentence: "已得履，乃曰：「吾忘持度。」",
+                translation: "已經挑選到鞋子，這才說：「我忘記拿著量腳的尺寸了。」",
+                words: [
+                    { word: "已", explanation: "已經。", type: "虛詞" },
+                    { word: "得", explanation: "得到，挑選到。", type: "動詞" },
+                    { word: "履", explanation: "鞋子。", type: "實詞" },
+                    { word: "乃", explanation: "這才，於是。", type: "虛詞" },
+                    { word: "曰", explanation: "說。", type: "動詞" },
+                    { word: "吾", explanation: "我。", type: "代詞" },
+                    { word: "忘", explanation: "忘記。", type: "動詞" },
+                    { word: "持", explanation: "拿著，執持。", type: "動詞" },
+                    { word: "度", explanation: "量度的尺寸。", type: "實詞" }
+                ],
+                analysis: "鄭人發現問題的關鍵，再次強調其對尺寸的依賴。",
+                rhetoric: "直接引語"
+            },
+            {
+                sentence: "反歸取之，及反，市罷，遂不得履。",
+                translation: "他返回家去拿尺寸，等到他再返回市集時，市集已經散了，最終沒有買到鞋子。",
+                words: [
+                    { word: "反", explanation: "返回。", type: "動詞" },
+                    { word: "歸", explanation: "回去。", type: "動詞" },
+                    { word: "取", explanation: "拿取。", type: "動詞" },
+                    { word: "之", explanation: "它，指量度的尺寸。", type: "代詞" },
+                    { word: "及", explanation: "等到。", type: "虛詞" },
+                    { word: "反", explanation: "返回。", type: "動詞" },
+                    { word: "市罷", explanation: "市集已經散了。罷：結束。", type: "動詞" },
+                    { word: "遂", explanation: "於是，結果。", type: "虛詞" },
+                    { word: "不得", explanation: "沒有得到，沒有買到。", type: "動詞" },
+                    { word: "履", explanation: "鞋子。", type: "實詞" }
+                ],
+                analysis: "描寫鄭人因固執而錯失買鞋的機會，點明故事的結果。",
+                rhetoric: "情節發展"
+            },
+            {
+                sentence: "人曰：「何不試之以足？」",
+                translation: "有人問他：「你為什麼不用自己的腳去試鞋子呢？」",
+                words: [
+                    { word: "人", explanation: "別人，有人。", type: "實詞" },
+                    { word: "曰", explanation: "說。", type: "動詞" },
+                    { word: "何", explanation: "為什麼。", type: "虛詞" },
+                    { word: "不", explanation: "不。", type: "虛詞" },
+                    { word: "試", explanation: "試穿，試驗。", type: "動詞" },
+                    { word: "之", explanation: "它，指鞋子。", type: "代詞" },
+                    { word: "以", explanation: "用，憑藉。", type: "虛詞" },
+                    { word: "足", explanation: "腳。", type: "實詞" }
+                ],
+                analysis: "旁人的提問，點出鄭人行為的不合理性。",
+                rhetoric: "設問、反詰"
+            },
+            {
+                sentence: "曰：「寧信度，無自信也。」",
+                translation: "（鄭人）回答說：「我寧願相信量度的尺寸，也不相信自己的腳。」",
+                words: [
+                    { word: "曰", explanation: "說。", type: "動詞" },
+                    { word: "寧", explanation: "寧願。", type: "虛詞" },
+                    { word: "信", explanation: "相信。", type: "動詞" },
+                    { word: "度", explanation: "量度的尺寸。", type: "實詞" },
+                    { word: "無", explanation: "不，沒有。", type: "虛詞" },
+                    { word: "自", explanation: "自己。", type: "虛詞" },
+                    { word: "信", explanation: "相信。", type: "動詞" },
+                    { word: "也", explanation: "語氣助詞，表示肯定。", type: "虛詞" }
+                ],
+                analysis: "鄭人的回答，直接揭示其思想的迂腐和固執，是全文的點睛之筆。",
+                rhetoric: "直接引語、點睛之筆"
+            }
+        ];
+
+        // 遊戲數據
+        const gameData = [
+            // 1. 詞義連線（wordMatch） - 25 題
+            { id: "wm1", type: "wordMatch", question: "「鄭人」指的是什麼？", options: [{ text: "姓鄭的人", isCorrect: false }, { text: "鄭國的人", isCorrect: true }, { text: "鄭重的人", isCorrect: false }], explanation: "「鄭人」指鄭國的人。" },
+            { id: "wm2", type: "wordMatch", question: "「履」的意思是？", options: [{ text: "衣服", isCorrect: false }, { text: "鞋子", isCorrect: true }, { text: "帽子", isCorrect: false }], explanation: "「履」指鞋子。" },
+            { id: "wm3", type: "wordMatch", question: "「且」在文中作何解釋？", options: [{ text: "而且", isCorrect: false }, { text: "將要", isCorrect: true }, { text: "暫且", isCorrect: false }], explanation: "「且」指將要。" },
+            { id: "wm4", type: "wordMatch", question: "「置」在「鄭人有且置履者」中作何解釋？", options: [{ text: "放置", isCorrect: false }, { text: "購買", isCorrect: true }, { text: "設置", isCorrect: false }], explanation: "「置」指購買。" },
+            { id: "wm5", type: "wordMatch", question: "「度」在「先自度其足」中作何解釋？", options: [{ text: "程度", isCorrect: false }, { text: "量度", isCorrect: true }, { text: "猜測", isCorrect: false }], explanation: "「度」指量度。" },
+            { id: "wm6", type: "wordMatch", question: "「其」在「先自度其足」中作何解釋？", options: [{ text: "那", isCorrect: false }, { text: "他的", isCorrect: true }, { text: "其中", isCorrect: false }], explanation: "「其」指他的。" },
+            { id: "wm7", type: "wordMatch", question: "「置」在「而置之其坐」中作何解釋？", options: [{ text: "購買", isCorrect: false }, { text: "擱置，放在", isCorrect: true }, { text: "設置", isCorrect: false }], explanation: "「置」指擱置，放在。" },
+            { id: "wm8", type: "wordMatch", question: "「之」在「而置之其坐」中指什麼？", options: [{ text: "鄭人", isCorrect: false }, { text: "鞋子", isCorrect: false }, { text: "量度的尺寸", isCorrect: true }], explanation: "「之」指量度的尺寸。" },
+            { id: "wm9", type: "wordMatch", question: "「坐」在文中通什麼字？", options: [{ text: "做", isCorrect: false }, { text: "座", isCorrect: true }, { text: "作", isCorrect: false }], explanation: "「坐」通「座」，指座位。" },
+            { id: "wm10", type: "wordMatch", question: "「之市」的意思是？", options: [{ text: "市場的東西", isCorrect: false }, { text: "到市集去", isCorrect: true }, { text: "市場的市", isCorrect: false }], explanation: "「之」作動詞，前往，所以「之市」是到市集去。" },
+            { id: "wm11", type: "wordMatch", question: "「操」的意思是？", options: [{ text: "操作", isCorrect: false }, { text: "拿著，執持", isCorrect: true }, { text: "操練", isCorrect: false }], explanation: "「操」指拿著，執持。" },
+            { id: "wm12", type: "wordMatch", question: "「乃」在文中作何解釋？", options: [{ text: "於是", isCorrect: true }, { text: "就是", isCorrect: false }, { text: "竟然", isCorrect: false }], explanation: "「乃」指這才，於是。" },
+            { id: "wm13", type: "wordMatch", question: "「持」的意思是？", options: [{ text: "支持", isCorrect: false }, { text: "拿取", isCorrect: true }, { text: "堅持", isCorrect: false }], explanation: "「持」指拿取，與「操」同義。" },
+            { id: "wm14", type: "wordMatch", question: "「度」在「吾忘持度」中作何解釋？", options: [{ text: "量度動作", isCorrect: false }, { text: "量度的尺寸", isCorrect: true }, { text: "制度", isCorrect: false }], explanation: "「度」指量度的尺寸。" },
+            { id: "wm15", type: "wordMatch", question: "「反」在文中通什麼字？", options: [{ text: "反正", isCorrect: false }, { text: "返", isCorrect: true }, { text: "反應", isCorrect: false }], explanation: "「反」通「返」，指返回。" },
+            { id: "wm16", type: "wordMatch", question: "「市罷」的意思是？", options: [{ text: "市場關閉", isCorrect: true }, { text: "市場很累", isCorrect: false }, { text: "市場停止", isCorrect: false }], explanation: "「罷」指結束，所以「市罷」是市集已經散了。" },
+            { id: "wm17", type: "wordMatch", question: "「遂」在文中作何解釋？", options: [{ text: "隨便", isCorrect: false }, { text: "於是，結果", isCorrect: true }, { text: "遂心", isCorrect: false }], explanation: "「遂」指於是，結果。" },
+            { id: "wm18", type: "wordMatch", question: "「何不試之以足」的意思是？", options: [{ text: "為何不用腳試試它", isCorrect: true }, { text: "為何不試著用腳走", isCorrect: false }, { text: "為何不試試它的足夠", isCorrect: false }], explanation: "這句話是倒裝句，意思是「為什麼不用自己的腳去試鞋呢？」" },
+            { id: "wm19", type: "wordMatch", question: "「寧信度，無自信也」中「寧」的意思是？", options: [{ text: "寧靜", isCorrect: false }, { text: "寧願", isCorrect: true }, { text: "寧可", isCorrect: false }], explanation: "「寧」指寧願。" },
+            { id: "wm20", type: "wordMatch", question: "「無自信也」中「無」的意思是？", options: [{ text: "沒有", isCorrect: true }, { text: "無論", isCorrect: false }, { text: "無奈", isCorrect: false }], explanation: "「無」指不，沒有。" },
+            { id: "wm21", type: "wordMatch", question: "韓非是哪個學派的代表人物？", options: [{ text: "儒家", isCorrect: false }, { text: "法家", isCorrect: true }, { text: "道家", isCorrect: false }], explanation: "韓非是法家主要代表人物。" },
+            { id: "wm22", type: "wordMatch", question: "《鄭人買履》這則寓言諷刺了哪種人？", options: [{ text: "聰明的人", isCorrect: false }, { text: "因循守舊，不思變通的人", isCorrect: true }, { text: "懶惰的人", isCorrect: false }], explanation: "寓言諷刺做事拘泥固執，不知靈活變通的人。" },
+            { id: "wm23", type: "wordMatch", question: "韓非所處的時代背景是什麼？", options: [{ text: "春秋時期", isCorrect: false }, { text: "戰國時期", isCorrect: true }, { text: "秦朝", isCorrect: false }], explanation: "韓非生於戰國時代，當時各國競爭激烈，紛紛變法圖強。" },
+            { id: "wm24", type: "wordMatch", question: "《韓非子》的文章特點不包括？", options: [{ text: "詞鋒銳利", isCorrect: false }, { text: "議論精闢", isCorrect: false }, { text: "善用寓言", isCorrect: false }, { text: "平鋪直敘", isCorrect: true }], explanation: "《韓非子》善用寓言，巧設譬喻，使得文章更為生動，並非平鋪直敘。" },
+            { id: "wm25", type: "wordMatch", question: "「一詞多義」在《鄭人買履》中體現在哪個字上？", options: [{ text: "人", isCorrect: false }, { text: "置", isCorrect: true }, { text: "履", isCorrect: false }], explanation: "文中「置」、「度」等字前後重複出現，但詞性與意思並不相同，體現了一詞多義。" },
+
+            // 2. 句子排序（sentenceReorder） - 25 題
+            { id: "sr1", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["鄭人", "有", "且", "置", "履者，"], options: [{ text: "鄭人有且置履者，", isCorrect: true }], explanation: "原文為：「鄭人有且置履者，」" },
+            { id: "sr2", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["先", "自度", "其足", "而", "置之", "其坐。"], options: [{ text: "先自度其足而置之其坐。", isCorrect: true }], explanation: "原文為：「先自度其足而置之其坐。」" },
+            { id: "sr3", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["至", "之市，", "而", "忘操之。"], options: [{ text: "至之市，而忘操之。", isCorrect: true }], explanation: "原文為：「至之市，而忘操之。」" },
+            { id: "sr4", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["已得履，", "乃曰：", "「吾忘持度。」"], options: [{ text: "已得履，乃曰：「吾忘持度。」", isCorrect: true }], explanation: "原文為：「已得履，乃曰：「吾忘持度。」」" },
+            { id: "sr5", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["反歸取之，", "及反，", "市罷，", "遂不得履。"], options: [{ text: "反歸取之，及反，市罷，遂不得履。", isCorrect: true }], explanation: "原文為：「反歸取之，及反，市罷，遂不得履。」" },
+            { id: "sr6", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["人曰：", "「何不試之以足？」"], options: [{ text: "人曰：「何不試之以足？」", isCorrect: true }], explanation: "原文為：「人曰：「何不試之以足？」」" },
+            { id: "sr7", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["曰：", "「寧信度，", "無自信也。」"], options: [{ text: "曰：「寧信度，無自信也。」", isCorrect: true }], explanation: "原文為：「曰：「寧信度，無自信也。」」" },
+            { id: "sr8", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["韓非", "戰國末期", "思想家"], options: [{ text: "韓非 戰國末期思想家", isCorrect: true }], explanation: "韓非是戰國末期思想家。" },
+            { id: "sr9", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["法家", "主要", "代表人物"], options: [{ text: "法家主要代表人物", isCorrect: true }], explanation: "韓非是法家主要代表人物。" },
+            { id: "sr10", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["與李斯", "同是", "荀子的學生"], options: [{ text: "與李斯同是荀子的學生", isCorrect: true }], explanation: "韓非與李斯同是荀子的學生。" },
+            { id: "sr11", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["秦始皇", "讀到", "他的著作", "十分欣賞"], options: [{ text: "秦始皇讀到他的著作 十分欣賞", isCorrect: true }], explanation: "秦始皇讀到韓非的著作，十分欣賞。" },
+            { id: "sr12", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["韓非", "最後", "死在獄中"], options: [{ text: "韓非最後死在獄中", isCorrect: true }], explanation: "韓非最後死在獄中。" },
+            { id: "sr13", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["韓非的", "思想", "集法家", "大成"], options: [{ text: "韓非的思想集法家大成", isCorrect: true }], explanation: "韓非的思想集法家的大成。" },
+            { id: "sr14", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["君主專制", "及", "法家思想"], options: [{ text: "君主專制及法家思想", isCorrect: true }], explanation: "他提出的君主專制及法家思想等，對後世影響很大。" },
+            { id: "sr15", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["《韓非子》", "文章", "詞鋒銳利"], options: [{ text: "《韓非子》文章詞鋒銳利", isCorrect: true }], explanation: "《韓非子》的文章詞鋒銳利。" },
+            { id: "sr16", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["議論", "精闢"], options: [{ text: "議論精闢", isCorrect: true }], explanation: "《韓非子》議論精闢。" },
+            { id: "sr17", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["善用", "寓言"], options: [{ text: "善用寓言", isCorrect: true }], explanation: "《韓非子》善用寓言。" },
+            { id: "sr18", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["巧設", "譬喻"], options: [{ text: "巧設譬喻", isCorrect: true }], explanation: "《韓非子》巧設譬喻。" },
+            { id: "sr19", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["諷刺", "因循守舊", "不思變通的人"], options: [{ text: "諷刺因循守舊不思變通的人", isCorrect: true }], explanation: "寓言諷刺那些因循守舊，不思變通的人。" },
+            { id: "sr20", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["體現", "深刻的", "道理"], options: [{ text: "體現深刻的道理", isCorrect: true }], explanation: "寓言故事能體現深刻的道理。" },
+            { id: "sr21", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["做事", "拘泥固執"], options: [{ text: "做事拘泥固執", isCorrect: true }], explanation: "作者以這則寓言諷刺做事拘泥固執的人。" },
+            { id: "sr22", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["迂腐", "可笑的", "形象"], options: [{ text: "迂腐可笑的形象", isCorrect: true }], explanation: "活現出他迂腐可笑的形象。" },
+            { id: "sr23", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["言簡", "意深"], options: [{ text: "言簡意深", isCorrect: true }], explanation: "本文言簡意深。" },
+            { id: "sr24", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["極具", "諷刺", "意味"], options: [{ text: "極具諷刺意味", isCorrect: true }], explanation: "本文極具諷刺意味。" },
+            { id: "sr25", type: "sentenceReorder", question: "請將以下詞語排列成原文正確的句子：", scrambled: ["抱殘守缺", "不懂", "變通"], options: [{ text: "抱殘守缺不懂變通", isCorrect: true }], explanation: "人若抱殘守缺，不懂變通，終會一事無成。" },
+
+            // 3. 文意選擇題（multipleChoice） - 25 題
+            { id: "mc1", type: "multipleChoice", question: "《鄭人買履》的作者是誰？", options: [{ text: "孟子", isCorrect: false }, { text: "韓非", isCorrect: true }, { text: "莊子", isCorrect: false }], explanation: "《鄭人買履》的作者是韓非。" },
+            { id: "mc2", type: "multipleChoice", question: "鄭人買鞋前做了什麼準備？", options: [{ text: "試穿了鞋子", isCorrect: false }, { text: "量了自己的腳的尺寸", isCorrect: true }, { text: "詢問了店主", isCorrect: false }], explanation: "鄭人先量了自己的腳的尺寸。" },
+            { id: "mc3", type: "multipleChoice", question: "鄭人為什麼最終沒有買到鞋子？", options: [{ text: "鞋子不合腳", isCorrect: false }, { text: "忘記帶量腳的尺寸，回去取時市集已散", isCorrect: true }, { text: "沒有錢買鞋", isCorrect: false }], explanation: "他忘記帶尺寸，回去取時市集已散，所以沒買到。" },
+            { id: "mc4", type: "multipleChoice", question: "旁人問鄭人「何不試之以足」，鄭人如何回答？", options: [{ text: "鞋子太貴了", isCorrect: false }, { text: "寧信度，無自信也", isCorrect: true }, { text: "我的腳不準", isCorrect: false }], explanation: "鄭人回答：「寧信度，無自信也。」" },
+            { id: "mc5", type: "multipleChoice", question: "這個寓言故事主要諷刺了哪種人？", options: [{ text: "粗心大意的人", isCorrect: false }, { text: "因循守舊，不知變通的人", isCorrect: true }, { text: "不相信自己的人", isCorrect: false }], explanation: "寓言諷刺做事拘泥固執，不知靈活變通的人。" },
+            { id: "mc6", type: "multipleChoice", question: "韓非是哪個學派的代表人物？", options: [{ text: "道家", isCorrect: false }, { text: "法家", isCorrect: true }, { text: "墨家", isCorrect: false }], explanation: "韓非是法家主要代表人物。" },
+            { id: "mc7", type: "multipleChoice", question: "《韓非子》這本書的寫作特點之一是？", options: [{ text: "語言平實", isCorrect: false }, { text: "善用寓言，巧設譬喻", isCorrect: true }, { text: "內容冗長", isCorrect: false }], explanation: "《韓非子》善用寓言，巧設譬喻，使得文章更為生動。" },
+            { id: "mc8", type: "multipleChoice", question: "故事中「置」字前後意思不同，這體現了文言文的什麼特點？", options: [{ text: "通假字", isCorrect: false }, { text: "一詞多義", isCorrect: true }, { text: "古今字", isCorrect: false }], explanation: "「置」字在不同語境下有不同的詞性和意思，是一詞多義的表現。" },
+            { id: "mc9", type: "multipleChoice", question: "鄭人最終「不得履」的結果，暗示了韓非的什麼看法？", options: [{ text: "買鞋很困難", isCorrect: false }, { text: "人若抱殘守缺，不懂變通，終會一事無成", isCorrect: true }, { text: "市場管理混亂", isCorrect: false }], explanation: "這個結果暗示了固執己見的危害。" },
+            { id: "mc10", type: "multipleChoice", question: "「坐」在文中通「座」，這屬於文言文的哪種現象？", options: [{ text: "異體字", isCorrect: false }, { text: "古今字", isCorrect: true }, { text: "錯別字", isCorrect: false }], explanation: "「坐」通「座」是文言文中常見的古今字現象。" },
+            { id: "mc11", type: "multipleChoice", question: "鄭人量腳的尺寸放在哪裡？", options: [{ text: "口袋裡", isCorrect: false }, { text: "座位上", isCorrect: true }, { text: "手上", isCorrect: false }], explanation: "原文提到「置之其坐」。" },
+            { id: "mc12", type: "multipleChoice", question: "鄭人到市集時，忘記帶什麼？", options: [{ text: "錢", isCorrect: false }, { text: "量腳的尺寸", isCorrect: true }, { text: "鞋子", isCorrect: false }], explanation: "他忘記帶量腳的尺寸。" },
+            { id: "mc13", type: "multipleChoice", question: "這個寓言故事的篇幅特點是？", options: [{ text: "很長", isCorrect: false }, { text: "篇幅不長，情節簡單", isCorrect: true }, { text: "複雜", isCorrect: false }], explanation: "寓言故事通常篇幅短小，情節簡單。" },
+            { id: "mc14", type: "multipleChoice", question: "韓非所處的戰國時代，各國的狀況是什麼？", options: [{ text: "和平穩定", isCorrect: false }, { text: "競爭激烈，紛紛變法圖強", isCorrect: true }, { text: "統一強大", isCorrect: false }], explanation: "戰國時期各國競爭激烈，推行變法。" },
+            { id: "mc15", type: "multipleChoice", question: "故事中詳寫了鄭人哪些行為？", options: [{ text: "選鞋的過程", isCorrect: false }, { text: "量度雙腳和回家取尺寸的經過", isCorrect: true }, { text: "與商販的對話", isCorrect: false }], explanation: "文中詳寫鄭人量度雙腳和回家取尺寸的經過。" },
+            { id: "mc16", type: "multipleChoice", question: "「反」在文中通「返」，這屬於文言文的哪種現象？", options: [{ text: "通假字", isCorrect: true }, { text: "一詞多義", isCorrect: false }, { text: "錯別字", isCorrect: false }], explanation: "「反」通「返」是通假字現象。" },
+            { id: "mc17", type: "multipleChoice", question: "鄭人「寧信度，無自信也」這句話，活現了他怎樣的形象？", options: [{ text: "聰明機智", isCorrect: false }, { text: "迂腐可笑", isCorrect: true }, { text: "謹慎細心", isCorrect: false }], explanation: "這句話直接揭示了其迂腐可笑的思想。" },
+            { id: "mc18", type: "multipleChoice", question: "中國先秦時期的思想家喜歡運用寓言寄寓道理，以下哪個不是寓言故事？", options: [{ text: "井底之蛙", isCorrect: false }, { text: "自相矛盾", isCorrect: false }, { text: "愚公移山", isCorrect: true }], explanation: "《愚公移山》是列子中的一篇，但通常不歸為寓言故事，而是神話或傳說。" },
+            { id: "mc19", type: "multipleChoice", question: "鄭人買履的故事給我們的啟示是什麼？", options: [{ text: "買東西要帶齊工具", isCorrect: false }, { text: "做事要靈活變通，不可拘泥固執", isCorrect: true }, { text: "要相信科學測量", isCorrect: false }], explanation: "寓言的核心意義是告誡人們要靈活變通。" },
+            { id: "mc20", type: "multipleChoice", question: "韓非的思想對後世產生了什麼影響？", options: [{ text: "提倡仁政", isCorrect: false }, { text: "提出的君主專制及法家思想影響很大", isCorrect: true }, { text: "主張無為而治", isCorrect: false }], explanation: "韓非的思想對後世影響很大，尤其在法家思想方面。" },
+            { id: "mc21", type: "multipleChoice", question: "故事中鄭人回家取尺寸後，再回到市集時發生了什麼？", options: [{ text: "買到了鞋子", isCorrect: false }, { text: "市集已經散了", isCorrect: true }, { text: "遇到了朋友", isCorrect: false }], explanation: "「及反，市罷，遂不得履。」" },
+            { id: "mc22", type: "multipleChoice", question: "《鄭人買履》這則寓言的諷刺意味體現在哪裡？", options: [{ text: "直接批評鄭人", isCorrect: false }, { text: "透過鄭人的行徑及說話活現其迂腐可笑的形象", isCorrect: true }, { text: "強調尺寸的重要性", isCorrect: false }], explanation: "作者通過描寫鄭人的行為和對話來諷刺，而非直接評價。" },
+            { id: "mc23", type: "multipleChoice", question: "鄭人買履的故事告訴我們，在現實生活中應該如何做？", options: [{ text: "嚴格遵守規則", isCorrect: false }, { text: "根據實際情況靈活調整", isCorrect: true }, { text: "完全不相信任何測量", isCorrect: false }], explanation: "故事強調了靈活變通的重要性。" },
+            { id: "mc24", type: "multipleChoice", question: "文中「置」字作為動詞，在不同語境下，其詞義的變化屬於？", options: [{ text: "詞類活用", isCorrect: false }, { text: "一詞多義", isCorrect: true }, { text: "通假字", isCorrect: false }], explanation: "同一字在不同語境下表示不同意思，是一詞多義。" },
+            { id: "mc25", type: "multipleChoice", question: "《鄭人買履》這則寓言的藝術特色是？", options: [{ text: "情節複雜，人物眾多", isCorrect: false }, { text: "語言生動，文字精煉，言簡意深", isCorrect: true }, { text: "說教意味濃厚", isCorrect: false }], explanation: "寓言故事通常語言簡潔，寓意深刻。" },
+
+            // 4. 詞語配對（pairing） - 25 題
+            { id: "p1", type: "pairing", question: "韓非：配對的學派是？", options: [{ text: "儒家", isCorrect: false }, { text: "法家", isCorrect: true }, { text: "道家", isCorrect: false }], explanation: "韓非是法家主要代表人物。" },
+            { id: "p2", type: "pairing", question: "《韓非子》：配對的寫作特點是？", options: [{ text: "平鋪直敘", isCorrect: false }, { text: "善用寓言，巧設譬喻", isCorrect: true }, { text: "語言華麗", isCorrect: false }], explanation: "《韓非子》善用寓言，巧設譬喻。" },
+            { id: "p3", type: "pairing", question: "鄭國：配對的地理位置是？", options: [{ text: "今河北省", isCorrect: false }, { text: "今河南省鄭州一帶", isCorrect: true }, { text: "今山東省", isCorrect: false }], explanation: "鄭國領地在今日河南省鄭州一帶。" },
+            { id: "p4", type: "pairing", question: "「履」：配對的物品是？", options: [{ text: "帽子", isCorrect: false }, { text: "鞋子", isCorrect: true }, { text: "衣服", isCorrect: false }], explanation: "「履」指鞋子。" },
+            { id: "p5", type: "pairing", question: "「置」（購買）：配對的詞性是？", options: [{ text: "名詞", isCorrect: false }, { text: "動詞", isCorrect: true }, { text: "形容詞", isCorrect: false }], explanation: "此處「置」作動詞，表示購買。" },
+            { id: "p6", type: "pairing", question: "「度」（量度）：配對的詞性是？", options: [{ text: "名詞", isCorrect: false }, { text: "動詞", isCorrect: true }, { text: "形容詞", isCorrect: false }], explanation: "此處「度」作動詞，表示量度。" },
+            { id: "p7", type: "pairing", question: "「坐」：配對的通假字是？", options: [{ text: "做", isCorrect: false }, { text: "座", isCorrect: true }, { text: "作", isCorrect: false }], explanation: "「坐」通「座」。" },
+            { id: "p8", type: "pairing", question: "「反」：配對的通假字是？", options: [{ text: "反正", isCorrect: false }, { text: "返", isCorrect: true }, { text: "反應", isCorrect: false }], explanation: "「反」通「返」。" },
+            { id: "p9", type: "pairing", question: "「市罷」：配對的含義是？", options: [{ text: "市場很累", isCorrect: false }, { text: "市集已經散了", isCorrect: true }, { text: "市場停止營業", isCorrect: false }], explanation: "「罷」指結束，市罷即市集散了。" },
+            { id: "p10", type: "pairing", question: "「寧信度，無自信也」：配對的諷刺對象是？", options: [{ text: "不帶尺寸的人", isCorrect: false }, { text: "因循守舊，不知變通的人", isCorrect: true }, { text: "賣鞋的人", isCorrect: false }], explanation: "這句話諷刺了因循守舊，不知變通的人。" },
+            { id: "p11", type: "pairing", question: "《鄭人買履》：配對的文學體裁是？", options: [{ text: "詩歌", isCorrect: false }, { text: "寓言", isCorrect: true }, { text: "散文", isCorrect: false }], explanation: "《鄭人買履》是一則寓言故事。" },
+            { id: "p12", type: "pairing", question: "韓非與李斯：配對的共同老師是？", options: [{ text: "孔子", isCorrect: false }, { text: "荀子", isCorrect: true }, { text: "老子", isCorrect: false }], explanation: "韓非與李斯同是荀子的學生。" },
+            { id: "p13", type: "pairing", question: "鄭人買履的故事結果：配對的是？", options: [{ text: "買到了合適的鞋", isCorrect: false }, { text: "最終沒有買到鞋子", isCorrect: true }, { text: "換了一雙鞋", isCorrect: false }], explanation: "鄭人最終沒有買到鞋子。" },
+            { id: "p14", type: "pairing", question: "「何不試之以足」：配對的語氣是？", options: [{ text: "陳述", isCorrect: false }, { text: "反詰疑問", isCorrect: true }, { text: "感歎", isCorrect: false }], explanation: "「何不」表示反詰疑問語氣。" },
+            { id: "p15", type: "pairing", question: "韓非主張：配對的政治理念是？", options: [{ text: "仁政", isCorrect: false }, { text: "改革，變法圖強", isCorrect: true }, { text: "無為而治", isCorrect: false }], explanation: "韓非極力主張改革，變法圖強。" },
+            { id: "p16", type: "pairing", question: "《韓非子》的說服力：配對的特點是？", options: [{ text: "薄弱", isCorrect: false }, { text: "很強", isCorrect: true }, { text: "一般", isCorrect: false }], explanation: "《韓非子》文章條理分明、嚴密透徹，有很強的說服力。" },
+            { id: "p17", type: "pairing", question: "鄭人「寧信度，無自信也」：配對的思想特點是？", options: [{ text: "靈活變通", isCorrect: false }, { text: "迂腐固執", isCorrect: true }, { text: "實事求是", isCorrect: false }], explanation: "這句話揭示了鄭人迂腐固執的思想。" },
+            { id: "p18", type: "pairing", question: "寓言故事的特點：配對的是？", options: [{ text: "篇幅長，情節複雜", isCorrect: false }, { text: "篇幅不長，情節簡單，體現深刻道理", isCorrect: true }, { text: "只為娛樂", isCorrect: false }], explanation: "寓言故事篇幅不長，情節簡單，但體現深刻道理。" },
+            { id: "p19", type: "pairing", question: "鄭人買履的故事中，作者略寫了哪個環節？", options: [{ text: "量腳尺寸", isCorrect: false }, { text: "中間選鞋的過程", isCorrect: true }, { text: "回家取尺寸", isCorrect: false }], explanation: "文中略寫中間選鞋的過程，突出重點。" },
+            { id: "p20", type: "pairing", question: "鄭人最終一無所獲的結果，與韓非對哪種人的看法相似？", options: [{ text: "改革者", isCorrect: false }, { text: "堅持守舊，不懂變通的人", isCorrect: true }, { text: "勤奮的人", isCorrect: false }], explanation: "鄭人的行為與堅持守舊的人相似，結果也暗示了不懂變通的後果。" },
+            { id: "p21", type: "pairing", question: "「之」在「至之市」中作何解釋？", options: [{ text: "的", isCorrect: false }, { text: "往，到…去", isCorrect: true }, { text: "他", isCorrect: false }], explanation: "此處「之」作動詞，前往。" },
+            { id: "p22", type: "pairing", question: "「已」在「已得履」中作何解釋？", options: [{ text: "已經", isCorrect: true }, { text: "停止", isCorrect: false }, { text: "而已", isCorrect: false }], explanation: "「已」指已經。" },
+            { id: "p23", type: "pairing", question: "「遂」在「遂不得履」中作何解釋？", options: [{ text: "隨便", isCorrect: false }, { text: "於是，結果", isCorrect: true }, { text: "遂心", isCorrect: false }], explanation: "「遂」指於是，結果。" },
+            { id: "p24", type: "pairing", question: "「無」在「無自信也」中作何解釋？", options: [{ text: "沒有", isCorrect: true }, { text: "無論", isCorrect: false }, { text: "無奈", isCorrect: false }], explanation: "「無」指不，沒有。" },
+            { id: "p25", type: "pairing", question: "「信」在「寧信度，無自信也」中作何解釋？", options: [{ text: "相信", isCorrect: true }, { text: "書信", isCorrect: false }, { text: "信用", isCorrect: false }], explanation: "「信」指相信。" },
+
+            // 5. 是非判斷題（trueFalse） - 25 題
+            { id: "tf1", type: "trueFalse", question: "《鄭人買履》的作者是荀子。", answer: false, explanation: "《鄭人買履》的作者是韓非。" },
+            { id: "tf2", type: "trueFalse", question: "鄭人買鞋前沒有做任何準備。", answer: false, explanation: "他先量了自己的腳的尺寸。" },
+            { id: "tf3", type: "trueFalse", question: "鄭人最終買到了合適的鞋子。", answer: false, explanation: "他最終沒有買到鞋子。" },
+            { id: "tf4", type: "trueFalse", question: "鄭人寧願相信自己的腳，也不相信尺寸。", answer: false, explanation: "鄭人說：「寧信度，無自信也。」" },
+            { id: "tf5", type: "trueFalse", question: "這個寓言故事諷刺的是聰明機智的人。", answer: false, explanation: "寓言諷刺的是因循守舊，不知變通的人。" },
+            { id: "tf6", type: "trueFalse", question: "韓非是儒家學派的代表人物。", answer: false, explanation: "韓非是法家主要代表人物。" },
+            { id: "tf7", type: "trueFalse", question: "《韓非子》的文章特點是語言平實，沒有說服力。", answer: false, explanation: "《韓非子》文章詞鋒銳利，議論精闢，有很強的說服力。" },
+            { id: "tf8", type: "trueFalse", question: "「置」字在文中前後意思相同。", answer: false, explanation: "「置」字前後詞性與意思不同，體現了一詞多義。" },
+            { id: "tf9", type: "trueFalse", question: "鄭人最終「不得履」的結果，說明了靈活變通的重要性。", answer: true, explanation: "這個結果暗示了人若抱殘守缺，不懂變通，終會一事無成。" },
+            { id: "tf10", type: "trueFalse", question: "「坐」在文中通「座」，這屬於通假字現象。", answer: false, explanation: "「坐」通「座」是古今字現象。" },
+            { id: "tf11", type: "trueFalse", question: "鄭人量腳的尺寸放在口袋裡。", answer: false, explanation: "他把尺寸放在自己的座位上。" },
+            { id: "tf12", type: "trueFalse", question: "鄭人到市集時，忘記帶錢。", answer: false, explanation: "他忘記帶量腳的尺寸。" },
+            { id: "tf13", type: "trueFalse", question: "寓言故事的篇幅通常很長，情節複雜。", answer: false, explanation: "寓言故事篇幅不長，情節簡單。" },
+            { id: "tf14", type: "trueFalse", question: "韓非所處的戰國時代，各國都和平穩定。", answer: false, explanation: "戰國時期各國競爭激烈，紛紛變法圖強。" },
+            { id: "tf15", type: "trueFalse", question: "故事中詳寫了鄭人與商販的對話。", answer: false, explanation: "文中詳寫鄭人量度雙腳和回家取尺寸的經過，略寫選鞋過程。" },
+            { id: "tf16", type: "trueFalse", question: "「反」在文中通「返」，這屬於古今字現象。", answer: true, explanation: "「反」通「返」是通假字現象。" },
+            { id: "tf17", type: "trueFalse", question: "鄭人「寧信度，無自信也」這句話，說明他非常謹慎細心。", answer: false, explanation: "這句話揭示了他迂腐可笑的思想，而非謹慎細心。" },
+            { id: "tf18", type: "trueFalse", question: "《井底之蛙》不是寓言故事。", answer: false, explanation: "《井底之蛙》是著名的寓言故事。" },
+            { id: "tf19", type: "trueFalse", question: "鄭人買履的故事告訴我們，在現實生活中應該嚴格遵守規則，不變通。", answer: false, explanation: "故事強調了做事要靈活變通，不可拘泥固執。" },
+            { id: "tf20", type: "trueFalse", question: "韓非的思想對後世沒有產生影響。", answer: false, explanation: "他提出的君主專制及法家思想等，對後世影響很大。" },
+            { id: "tf21", type: "trueFalse", question: "鄭人回家取尺寸後，再回到市集時，市集還在營業。", answer: false, explanation: "市集已經散了。" },
+            { id: "tf22", type: "trueFalse", question: "《鄭人買履》這則寓言透過直接評價鄭人的行為來諷刺。", answer: false, explanation: "作者透過鄭人的行徑及說話活現其迂腐可笑的形象，而非直接評價。" },
+            { id: "tf23", type: "trueFalse", question: "鄭人買履的故事告訴我們，只要有尺寸，就能買到鞋子。", answer: false, explanation: "故事強調了靈活變通的重要性，僅有尺寸不夠。" },
+            { id: "tf24", type: "trueFalse", question: "文中「度」字作為動詞，在不同語境下，其詞義的變化屬於詞類活用。", answer: false, explanation: "同一字在不同語境下表示不同意思，是一詞多義。" },
+            { id: "tf25", type: "trueFalse", question: "《鄭人買履》這則寓言的藝術特色是情節複雜，人物眾多。", answer: false, explanation: "寓言故事通常情節簡單，人物不多，語言精煉，言簡意深。" }
+        ];
+
+        // Stores selected option for each question: {questionId: optionElement}
+        let selectedOptions = {};
+
+        const originalTextDiv = document.getElementById('original-text');
+        const analysisAreaDiv = document.getElementById('analysis-area');
+        const gameAreaDiv = document.getElementById('game-area');
+        
+        // To store the last clicked sentence for LLM (for Cantonese reading)
+        let currentSentenceForLLM = '';
+
+        /**
+         * 顯示提示訊息模態框
+         * @param {string} header 模態框標題
+         * @param {string} body 模態框內容
+         * @param {function} onCloseCallback 關閉模態框後執行的回調函數 (可選)
+         */
+        function showMessage(header, body, onCloseCallback = null) {
+            modalHeader.textContent = header;
+            modalBody.textContent = body;
+            messageModal.style.display = 'flex'; // 顯示模態框
+
+            const closeHandler = () => {
+                messageModal.style.display = 'none'; // 隱藏模態框
+                modalCloseBtn.removeEventListener('click', closeHandler); // 移除事件監聽器
+                if (onCloseCallback) {
+                    onCloseCallback(); // 執行回調
+                }
+            };
+            // 每次顯示模態框時，重新添加事件監聽器，以確保只執行一次
+            modalCloseBtn.removeEventListener('click', closeHandler); // 避免重複添加
+            modalCloseBtn.addEventListener('click', closeHandler);
+        }
+
+        /**
+         * 初始化原文顯示區
+         * 將每句話包裝在可點擊的 span 中
+         */
+        function initializeOriginalText() {
+            originalTextDiv.innerHTML = ''; // 清空內容
+            // 從 textData 中過濾掉 generalInfo，只處理實際的詩句
+            textData.filter(data => data.type !== "generalInfo").forEach((data, index) => {
+                const sentenceSpan = document.createElement('span');
+                sentenceSpan.classList.add('sentence-span');
+                sentenceSpan.textContent = data.sentence;
+                // 使用原始索引，因為 generalInfo 不會被點擊
+                sentenceSpan.dataset.index = textData.indexOf(data); 
+                sentenceSpan.addEventListener('click', () => displaySentenceAnalysis(textData.indexOf(data)));
+                originalTextDiv.appendChild(sentenceSpan);
+            });
+        }
+
+        /**
+         * 顯示指定索引句子的分析內容
+         * @param {number} index 句子的索引 (在 textData 陣列中的實際索引)
+         */
+        function displaySentenceAnalysis(index) {
+            const data = textData[index];
+            if (!data || data.type === "generalInfo") { 
+                displayGeneralInfo(); // Fallback to displaying general info if generalInfo is clicked
+                return;
+            }
+
+            currentSentenceForLLM = data.sentence; // Store the current sentence for LLM functions
+
+            // 移除所有活躍狀態
+            document.querySelectorAll('.sentence-span').forEach(span => {
+                span.classList.remove('active');
+            });
+            // 添加活躍狀態到當前點擊的句子
+            // 由於 data-index 存儲的是 textData 中的實際索引，可以直接使用
+            document.querySelector(`.sentence-span[data-index="${index}"]`).classList.add('active');
+
+            let htmlContent = '';
+
+            // Always display general poem info and author intro at the top
+            const generalInfo = textData.find(item => item.type === "generalInfo");
+            if (generalInfo) {
+                htmlContent += `
+                    <div class="mb-6 pb-4 border-b border-gray-200">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">作者簡介：${generalInfo.author}</h3>
+                        <p class="text-gray-700 mb-4">${generalInfo.authorIntro}</p>
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">作品背景與總體賞析：</h3>
+                        <p class="text-gray-700 mb-2">${generalInfo.poemBackground}</p>
+                        <p class="text-gray-700">${generalInfo.overallAnalysis}</p>
+                    </div>
+                `;
+            }
+
+            // Now display specific sentence analysis
+            htmlContent += `
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">${data.sentence}</h3>
+                <div class="mb-4">
+                    <p class="font-medium text-indigo-500 mb-1"><i class="fas fa-language mr-1"></i> 白話翻譯：</p>
+                    <p class="text-gray-700">${data.translation}</p>
+                </div>
+                <div class="mb-4">
+                    <p class="font-medium text-indigo-500 mb-1"><i class="fas fa-lightbulb mr-1"></i> 詞語解釋：</p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1">
+                        ${data.words.map(w => `<li><span class="font-semibold">${w.word}：</span>${w.explanation}${w.type ? ` (${w.type})` : ''}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="mb-4">
+                    <p class="font-medium text-indigo-500 mb-1"><i class="fas fa-pencil-alt mr-1"></i> 修辭與語法：</p>
+                    <p class="text-gray-700">${data.rhetoric || '無'}</p>
+                </div>
+                <div class="mb-4">
+                    <p class="font-medium text-indigo-500 mb-1"><i class="fas fa-info-circle mr-1"></i> 重點分析：</p>
+                    <p class="text-gray-700">${data.analysis}</p>
+                </div>
+
+                <div class="mt-6 border-t pt-4 border-gray-200">
+                    <button id="read-aloud-btn" class="game-button w-full mb-2">🔊 廣東話朗讀</button>
+                </div>
+            `;
+            analysisAreaDiv.innerHTML = htmlContent;
+
+            const readAloudBtn = document.getElementById('read-aloud-btn');
+            if (readAloudBtn) {
+                readAloudBtn.addEventListener('click', () => readSentenceAloud(currentSentenceForLLM));
+            }
+        }
+
+        /**
+         * 廣東話朗讀句子功能
+         * @param {string} text 要朗讀的文字
+         */
+        function readSentenceAloud(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                let foundVoice = false;
+
+                // 嘗試尋找廣東話語音 (zh-HK 或 yue-HK)
+                const voices = speechSynthesis.getVoices();
+                for (const voice of voices) {
+                    if (voice.lang === 'zh-HK' || voice.lang.toLowerCase() === 'yue-hk' || voice.name.includes('Cantonese') || voice.name.includes('Hong Kong')) {
+                        utterance.voice = voice;
+                        foundVoice = true;
+                        console.log('Found Cantonese voice:', voice.name);
+                        break;
+                    }
+                }
+
+                // 如果沒有找到特定的廣東話語音，則嘗試中文或普通話語音作為備用
+                if (!foundVoice) {
+                    for (const voice of voices) {
+                        if (voice.lang.startsWith('zh-') || voice.name.includes('Chinese')) {
+                            utterance.voice = voice;
+                            foundVoice = true;
+                            console.log('Using fallback Chinese voice:', voice.name);
+                            break;
+                        }
+                    }
+                }
+                
+                // 如果依然沒有找到，則使用瀏覽器預設語音
+                if (!foundVoice) {
+                    console.log('Using default voice as no Chinese/Cantonese voice found.');
+                }
+
+                utterance.rate = 0.8; // 調整語速 (0.1 到 10)
+                utterance.pitch = 1;  // 調整音高 (0 到 2)
+
+                utterance.onend = () => {
+                    // 朗讀結束後可以執行一些操作，例如啟用按鈕
+                    console.log('語音朗讀結束');
+                };
+
+                utterance.onerror = (event) => {
+                    console.error('語音合成錯誤:', event.error);
+                    showMessage('朗讀失敗', '無法朗讀此句子，您的瀏覽器可能不支援廣東話語音或語音服務發生錯誤。錯誤訊息: ' + event.error);
+                };
+
+                speechSynthesis.speak(utterance);
+            } else {
+                showMessage('瀏覽器不支援', '您的瀏覽器不支援語音朗讀功能。請嘗試更新瀏覽器或使用其他瀏覽器。');
+            }
+        }
+
+        /**
+         * 顯示總體賞析和作者簡介
+         */
+        function displayGeneralInfo() {
+            const generalInfo = textData.find(item => item.type === "generalInfo");
+            if (generalInfo) {
+                let htmlContent = `
+                    <div class="mb-6 pb-4 border-b border-gray-200">
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">作者簡介：${generalInfo.author}</h3>
+                        <p class="text-gray-700 mb-4">${generalInfo.authorIntro}</p>
+                        <h3 class="text-xl font-bold text-indigo-700 mb-2">作品背景與總體賞析：</h3>
+                        <p class="text-gray-700 mb-2">${generalInfo.poemBackground}</p>
+                        <p class="text-gray-700">${generalInfo.overallAnalysis}</p>
+                    </div>
+                    <p class="text-center text-gray-500 italic mt-8">
+                        點擊左側原文中的句子，即可在此處查看詳細分析。
+                    </p>
+                `;
+                analysisAreaDiv.innerHTML = htmlContent;
+            } else {
+                analysisAreaDiv.innerHTML = '<p class="text-center text-gray-500 italic mt-8">點擊左側原文中的句子，即可在此處查看詳細分析。</p>';
+            }
+        }
+
+        /**
+         * 顯示遊戲類型選擇按鈕
+         */
+        function displayGameTypeSelection() {
+            gameAreaDiv.innerHTML = ''; // 清空遊戲區
+
+            const gameTypeButtonsContainer = document.createElement('div');
+            // Adjusted grid for game type buttons for better responsive layout
+            gameTypeButtonsContainer.classList.add('grid', 'grid-cols-2', 'md:grid-cols-3', 'lg:grid-cols-5', 'gap-4', 'mt-4');
+
+            const gameTypes = [
+                { key: "wordMatch", title: "詞義連線" },
+                { key: "sentenceReorder", title: "句子排序" },
+                { key: "multipleChoice", title: "文意選擇題" },
+                { key: "pairing", title: "詞語配對" },
+                { key: "trueFalse", title: "是非題" }
+            ];
+
+            gameTypes.forEach(typeInfo => {
+                const button = document.createElement('button');
+                button.classList.add('game-type-button');
+                button.textContent = typeInfo.title;
+                button.dataset.gameTypeKey = typeInfo.key;
+                button.addEventListener('click', () => renderQuestionsForType(typeInfo.key, typeInfo.title));
+                gameTypeButtonsContainer.appendChild(button);
+            });
+            gameAreaDiv.appendChild(gameTypeButtonsContainer);
+        }
+
+        /**
+         * 渲染特定遊戲類型的題目
+         * @param {string} selectedGameTypeKey 要顯示的遊戲類型鍵
+         * @param {string} selectedGameTypeTitle 要顯示的遊戲類型標題
+         */
+        function renderQuestionsForType(selectedGameTypeKey, selectedGameTypeTitle) {
+            gameAreaDiv.innerHTML = ''; // 清空遊戲區
+
+            // 返回按鈕
+            const backButton = document.createElement('button');
+            backButton.classList.add('game-button', 'mb-4', 'w-full', 'md:w-auto', 'mx-auto', 'block'); // Adjusted for full width on small and auto on md+
+            backButton.textContent = '返回遊戲選單';
+            backButton.addEventListener('click', displayGameTypeSelection);
+            gameAreaDiv.appendChild(backButton);
+
+            const typeSection = document.createElement('div');
+            typeSection.id = `game-section-${selectedGameTypeKey}`;
+            typeSection.classList.add('mb-8', 'p-4', 'bg-blue-50', 'rounded-xl', 'shadow-md');
+
+            const sectionHeader = document.createElement('h3');
+            sectionHeader.classList.add('text-xl', 'font-bold', 'text-blue-700', 'mb-4', 'pb-2', 'border-b-2', 'border-blue-200');
+            sectionHeader.textContent = selectedGameTypeTitle;
+            typeSection.appendChild(sectionHeader);
+
+            const questionsOfType = gameData.filter(q => q.type === selectedGameTypeKey);
+            // 隨機打亂當前遊戲類型的題目順序
+            questionsOfType.sort(() => Math.random() - 0.5);
+
+            questionsOfType.forEach((question, index) => {
+                const questionCard = document.createElement('div');
+                questionCard.id = `question-${question.id}`; // Use unique ID for each question
+                questionCard.classList.add('game-card', 'mb-4', 'border', 'border-gray-200', 'p-4');
+
+                const questionText = document.createElement('p');
+                questionText.classList.add('text-lg', 'font-semibold', 'text-gray-800', 'mb-3');
+                questionText.textContent = `${index + 1}. ${question.question}`;
+                questionCard.appendChild(questionText);
+
+                const optionsContainer = document.createElement('div');
+                optionsContainer.classList.add('grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-2', 'mb-4');
+
+                // Conditionally render options based on question type
+                if (question.type === "trueFalse") {
+                    const trueBtn = document.createElement('button');
+                    trueBtn.classList.add('game-button', 'text-left', 'w-full');
+                    trueBtn.textContent = '是';
+                    trueBtn.dataset.questionId = question.id;
+                    trueBtn.dataset.value = true; // Store boolean value for true/false check
+                    trueBtn.addEventListener('click', (e) => handleOptionClick(e.target, question));
+                    optionsContainer.appendChild(trueBtn);
+
+                    const falseBtn = document.createElement('button');
+                    falseBtn.classList.add('game-button', 'text-left', 'w-full');
+                    falseBtn.textContent = '非';
+                    falseBtn.dataset.questionId = question.id;
+                    falseBtn.dataset.value = false; // Store boolean value for true/false check
+                    falseBtn.addEventListener('click', (e) => handleOptionClick(e.target, question));
+                    optionsContainer.appendChild(falseBtn);
+                } else if (question.type === "sentenceReorder") {
+                     // For sentence reorder, options are the scrambled parts
+                     const shuffledSentenceParts = [...(question.scrambled || [])].sort(() => Math.random() - 0.5);
+                     shuffledSentenceParts.forEach((part, partIndex) => {
+                         const button = document.createElement('button');
+                         button.classList.add('game-button', 'text-left', 'w-full', 'sentence-part-button');
+                         button.textContent = part;
+                         button.dataset.questionId = question.id;
+                         button.dataset.originalPartIndex = partIndex; // Store original part index
+                         button.addEventListener('click', (e) => handleSentenceReorderClick(e.target, question));
+                         optionsContainer.appendChild(button);
+                     });
+                     // Display area for chosen order
+                     const chosenOrderDiv = document.createElement('div');
+                     chosenOrderDiv.id = `chosen-order-${question.id}`;
+                     chosenOrderDiv.classList.add('bg-gray-100', 'p-3', 'rounded-lg', 'mt-4', 'border', 'border-gray-300', 'min-h-[50px]', 'flex', 'flex-wrap', 'gap-2');
+                     optionsContainer.appendChild(chosenOrderDiv);
+
+                } else {
+                    // 對選項進行隨機排序 (適用於詞義連線和文意選擇)
+                    const shuffledOptions = [...question.options].sort(() => Math.random() - 0.5);
+                    shuffledOptions.forEach((option, optIndex) => {
+                        const button = document.createElement('button');
+                        button.classList.add('game-button', 'text-left', 'w-full');
+                        button.textContent = option.text;
+                        button.dataset.questionId = question.id;
+                        button.dataset.optionIndex = optIndex; // Store original index (optional, but good for debugging)
+                        button.dataset.isCorrect = option.isCorrect; // This is only relevant for multi-choice/word match
+                        button.addEventListener('click', (e) => handleOptionClick(e.target, question));
+                        optionsContainer.appendChild(button);
+                    });
+                }
+                questionCard.appendChild(optionsContainer);
+
+                // Add check answer button
+                const checkAnswerBtn = document.createElement('button');
+                checkAnswerBtn.id = `check-btn-${question.id}`;
+                checkAnswerBtn.classList.add('game-button', 'w-full', 'mt-2', 'md:w-auto', 'mx-auto', 'block');
+                checkAnswerBtn.textContent = '檢查答案';
+                checkAnswerBtn.dataset.questionId = question.id;
+                // Sentence reorder always enabled, others disabled until selection
+                checkAnswerBtn.disabled = (selectedGameTypeKey !== "sentenceReorder"); // Corrected initial state logic
+                checkAnswerBtn.addEventListener('click', () => checkAnswer(question));
+                questionCard.appendChild(checkAnswerBtn);
+
+                // Add feedback area (initially hidden)
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.id = `feedback-${question.id}`;
+                feedbackDiv.classList.add('mt-4', 'p-3', 'rounded-lg', 'text-sm', 'hidden');
+                questionCard.appendChild(feedbackDiv);
+
+                // Add continue button (initially hidden)
+                const newContinueBtn = document.createElement('button');
+                newContinueBtn.id = `continue-btn-${question.id}`;
+                newContinueBtn.classList.add('game-button', 'w-full', 'mt-2', 'hidden', 'md:w-auto', 'mx-auto', 'block');
+                newContinueBtn.textContent = '繼續';
+                newContinueBtn.addEventListener('click', () => hideFeedback(question.id));
+                questionCard.appendChild(newContinueBtn);
+               
+                typeSection.appendChild(questionCard);
+            });
+            gameAreaDiv.appendChild(typeSection);
+        }
+
+        /**
+         * 處理句子排序題的點擊事件
+         * @param {HTMLElement} clickedButton 被點擊的按鈕 (句子片段)
+         * @param {object} question 對應的問題數據
+         */
+        function handleSentenceReorderClick(clickedButton, question) {
+            const questionId = question.id;
+            const chosenOrderDiv = document.getElementById(`chosen-order-${questionId}`);
+            const checkAnswerBtn = document.getElementById(`check-btn-${questionId}`);
+
+            // Create a new span to represent the selected part in the chosen order area
+            const chosenPart = document.createElement('span');
+            chosenPart.classList.add('bg-blue-200', 'text-blue-800', 'px-3', 'py-1', 'rounded-full', 'mr-1', 'mb-1', 'inline-block', 'cursor-pointer');
+            chosenPart.textContent = clickedButton.textContent;
+            chosenPart.dataset.originalPart = clickedButton.textContent; // Store content for comparison
+            chosenPart.addEventListener('click', () => {
+                // Re-enable the original button when the chosen part is removed
+                const originalButtons = Array.from(document.querySelectorAll(`.sentence-part-button[data-question-id="${questionId}"]`));
+                const correspondingOriginalButton = originalButtons.find(btn => btn.textContent === chosenPart.dataset.originalPart && btn.disabled);
+                if (correspondingOriginalButton) {
+                    correspondingOriginalButton.disabled = false;
+                }
+                chosenPart.remove();
+                // If no parts left, disable check button
+                if (chosenOrderDiv.children.length === 0) {
+                    checkAnswerBtn.disabled = true;
+                }
+            });
+
+            chosenOrderDiv.appendChild(chosenPart);
+            clickedButton.disabled = true; // Disable the original button to prevent re-selection
+
+            checkAnswerBtn.disabled = false; // Enable check answer button once parts are selected
+        }
+
+        /**
+         * 清除句子排序題的已選內容 (在點擊「繼續」時調用)
+         * @param {string} questionId 問題的ID
+         */
+        function clearSentenceReorder(questionId) {
+            const chosenOrderDiv = document.getElementById(`chosen-order-${questionId}`);
+            chosenOrderDiv.innerHTML = ''; // 清除所有已選片段
+
+            // 重新啟用所有原始句子片段按鈕
+            const questionCard = document.getElementById(`question-${questionId}`);
+            const sentencePartButtons = Array.from(questionCard.querySelectorAll('.sentence-part-button'));
+            sentencePartButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('selected', 'correct', 'incorrect'); // 清除樣式
+            });
+
+            // 禁用檢查答案按鈕，如果沒有片段被選中
+            const checkAnswerBtn = document.getElementById(`check-btn-${questionId}`);
+            checkAnswerBtn.disabled = true;
+        }
+
+
+        /**
+         * 處理選項點擊事件
+         * @param {HTMLElement} clickedButton 被點擊的按鈕
+         * @param {object} question 該問題的數據對象
+         */
+        function handleOptionClick(clickedButton, question) {
+            const questionId = question.id;
+            const optionsContainer = clickedButton.parentNode;
+            const options = Array.from(optionsContainer.children);
+
+            // 移除所有選項的 'selected' 狀態 
+            options.forEach(btn => btn.classList.remove('selected'));
+
+            // 為被點擊的按鈕添加 'selected' 狀態
+            clickedButton.classList.add('selected');
+            selectedOptions[questionId] = clickedButton; // 儲存選中的選項元素
+
+            // 啟用該問題的檢查答案按鈕
+            document.getElementById(`check-btn-${questionId}`).disabled = false;
+        }
+
+        /**
+         * 檢查答案並顯示反饋
+         * @param {object} question 該問題的數據對象
+         */
+        function checkAnswer(question) {
+            const questionId = question.id;
+            const feedbackDiv = document.getElementById(`feedback-${questionId}`);
+            const checkAnswerBtn = document.getElementById(`check-btn-${questionId}`);
+            const continueBtn = document.getElementById(`continue-btn-${questionId}`);
+            const questionCard = document.getElementById(`question-${questionId}`);
+            const options = Array.from(questionCard.querySelectorAll('.game-button[data-question-id="'+questionId+'"]'));
+
+            let isCorrect = false;
+            let correctAnswerText = '';
+            let explanationText = question.explanation || '無詳細解釋。';
+
+            if (question.type === "sentenceReorder") {
+                const chosenOrderDiv = document.getElementById(`chosen-order-${questionId}`);
+                const chosenParts = Array.from(chosenOrderDiv.children).map(span => span.textContent);
+                
+                // Compare chosen order with the correct order
+                const correctSentence = question.options.find(opt => opt.isCorrect).text; // Assuming one correct option with full sentence
+                const joinedChosenParts = chosenParts.join(''); // Join parts without extra spaces
+                
+                // For direct comparison, remove any potential extra spaces in original sentence parts for comparison
+                const cleanedCorrectSentence = correctSentence.replace(/\s+/g, '').replace(/，|。|、|「|」|\s/g, ''); // 移除標點符號和空格
+                const cleanedJoinedChosenParts = joinedChosenParts.replace(/\s+/g, '').replace(/，|。|、|「|」|\s/g, ''); // 移除標點符號和空格
+
+                isCorrect = (cleanedJoinedChosenParts === cleanedCorrectSentence);
+                correctAnswerText = correctSentence;
+
+                // Disable all original sentence part buttons
+                const sentencePartButtons = Array.from(questionCard.querySelectorAll('.sentence-part-button'));
+                sentencePartButtons.forEach(btn => btn.disabled = true);
+                
+            } else {
+                const selectedOptionButton = selectedOptions[questionId];
+                if (!selectedOptionButton) {
+                    showMessage('請選擇一個答案', '請先點擊一個選項才能檢查答案。');
+                    return;
+                }
+
+                // 禁用所有選項和檢查答案按鈕
+                options.forEach(btn => btn.disabled = true);
+                checkAnswerBtn.disabled = true;
+
+                // 判斷題型的正確性
+                if (question.type === "trueFalse") {
+                    const selectedValue = selectedOptionButton.dataset.value === 'true';
+                    isCorrect = (selectedValue === question.answer);
+                    correctAnswerText = question.answer ? '是' : '非'; // 更新答案顯示
+                } else {
+                    const correctOption = question.options.find(opt => opt.isCorrect);
+                    isCorrect = (selectedOptionButton.dataset.isCorrect === 'true');
+                    if (correctOption) {
+                        correctAnswerText = correctOption.text;
+                    }
+                }
+            }
+
+
+            // 顯示反饋
+            if (isCorrect) {
+                // For non-reorder, highlight selected option
+                if (question.type !== "sentenceReorder") {
+                    const selectedOptionButton = selectedOptions[questionId];
+                    if (selectedOptionButton) {
+                        selectedOptionButton.classList.remove('selected');
+                        selectedOptionButton.classList.add('correct');
+                    }
+                }
+                feedbackDiv.classList.remove('bg-red-100', 'text-red-800', 'bg-red-50', 'text-red-700'); // Remove red background classes
+                feedbackDiv.classList.add('bg-green-100', 'text-green-800'); // Add green background classes
+                feedbackDiv.innerHTML = '<p class="font-bold">✓ 回答正確！</p>';
+            } else {
+                // For non-reorder, highlight selected incorrect option and correct option
+                if (question.type !== "sentenceReorder") {
+                    const selectedOptionButton = selectedOptions[questionId];
+                    if (selectedOptionButton) {
+                        selectedOptionButton.classList.remove('selected');
+                        selectedOptionButton.classList.add('incorrect');
+                    }
+                }
+                feedbackDiv.classList.remove('bg-green-100', 'text-green-800', 'bg-green-50', 'text-green-700'); // Remove green background classes
+                feedbackDiv.classList.add('bg-red-100', 'text-red-800'); // Add red background classes
+                feedbackDiv.innerHTML = `
+                    <p class="font-bold">✗ 回答錯誤！</p>
+                    <p>正確答案是：<span class="font-semibold">${correctAnswerText}</span></p>
+                    <p>${explanationText}</p>
+                `;
+                // 標記正確答案 (對於非句子排序題)
+                if (question.type !== "sentenceReorder") {
+                    options.forEach(btn => {
+                        if (question.type === "trueFalse") {
+                            if ((question.answer && btn.textContent === '是') || (!question.answer && btn.textContent === '非')) { 
+                                btn.classList.add('correct');
+                            }
+                        } else {
+                            if (btn.dataset.isCorrect === 'true') {
+                                btn.classList.add('correct');
+                            }
+                        }
+                    });
+                } else {
+                    // For sentenceReorder, add correct/incorrect styling to chosen parts for visual feedback
+                    const chosenOrderDiv = document.getElementById(`chosen-order-${questionId}`);
+                    const chosenPartsSpans = Array.from(chosenOrderDiv.children);
+                    if (isCorrect) {
+                        chosenPartsSpans.forEach(span => {
+                            span.classList.remove('bg-blue-200', 'text-blue-800', 'bg-red-200', 'text-red-800'); // Remove existing colors
+                            span.classList.add('bg-green-200', 'text-green-800');
+                        });
+                    } else {
+                        chosenPartsSpans.forEach(span => {
+                            span.classList.remove('bg-blue-200', 'text-blue-800', 'bg-green-200', 'text-green-800'); // Remove existing colors
+                            span.classList.add('bg-red-200', 'text-red-800');
+                        });
+                    }
+                }
+            }
+            feedbackDiv.classList.remove('hidden');
+            continueBtn.classList.remove('hidden');
+            checkAnswerBtn.disabled = true; // Ensure check answer is disabled after checking
+        }
+
+        /**
+         * 隱藏反饋區域並重置問題按鈕狀態（使其可以再次作答或為下一題準備）
+         * @param {string} questionId 問題的ID
+         */
+        function hideFeedback(questionId) {
+            const feedbackDiv = document.getElementById(`feedback-${questionId}`);
+            const continueBtn = document.getElementById(`continue-btn-${questionId}`);
+            const questionCard = document.getElementById(`question-${questionId}`);
+            
+            feedbackDiv.classList.add('hidden');
+            continueBtn.classList.add('hidden');
+
+            const question = gameData.find(q => q.id === questionId);
+
+            if (question.type === "sentenceReorder") {
+                clearSentenceReorder(question.id); // For reorder, just clear and reset
+            } else {
+                // 清除選中和顏色狀態，並重新啟用按鈕，以便重新玩同一類型的遊戲
+                const options = Array.from(questionCard.querySelectorAll('.game-button[data-question-id="'+questionId+'"]'));
+                options.forEach(btn => {
+                    btn.classList.remove('selected', 'correct', 'incorrect');
+                    btn.disabled = false; // 應該重新啟用，以便重新玩同一類型的遊戲
+                });
+                delete selectedOptions[questionId]; // 從已選中答案中移除
+            }
+        }
+
+        /**
+         * 重置遊戲狀態，回到遊戲類型選擇畫面
+         */
+        function resetGame() {
+            // 隨機打亂遊戲題目順序 (確保每次遊戲題目不同)
+            gameData.sort(() => Math.random() - 0.5);
+            displayGameTypeSelection(); // 顯示遊戲類型選擇按鈕
+        }
+
+        // 頁面加載完成後初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeOriginalText();
+            displayGeneralInfo(); // Display general info on initial load
+            displayGameTypeSelection();
+            messageModal.style.display = 'none';
+        });
+
+    </script>
+</body>
+</html>
